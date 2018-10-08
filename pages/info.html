@@ -1,0 +1,322 @@
+<div id="info">
+	<div class="optionDiv">
+		<select name="categoryId" class="form-control">
+			
+		</select>
+		<button class="btn btn-sm">新增</button>
+		<button class="btn btn-sm">批量删除</button>
+	</div>
+
+	<table class="table table-bordered table-hover text-center">
+		<tbody>
+			<tr><td>编号</td><td>文章标题</td><td>所属栏目</td><td>排列方式</td><td>作者</td><td>发布时间</td><td>阅读次数</td><td>操作</td></tr>
+		</tbody>
+	</table>
+	<div class="modal" id="myModal">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header text-center">
+					<i class="iconfont icon-zuo" style="float:left;cursor:pointer">返回</i>
+					<label class="modal-title">添加栏目</label>
+				</div>
+				<form>
+				<div class="modal-body">
+					<div class="form-group">
+						<label>标题</label>
+						<input type="text" name="infoTitle" class="form-control">
+					</div>
+					<div class="form-group">
+						<label>所属栏目</label>
+						<select name="infoCategory" id="" class="form-control">
+							
+						</select>
+					</div>
+					<div class="form-group">
+						<label>列表样式</label>
+						<div class="radio">
+							<label for="style-one">
+								<input type="radio" name="infoList" value="style-one" id="style-one">
+								<img src="http://120.78.164.247/cms/images/%E8%B5%84%E8%AE%AF%E7%AE%A1%E7%90%86/u352.jpg">
+							</label>
+							<label for="style-two">
+								<input type="radio" name="infoList" value="style-two" id="style-two">
+								<img src="http://120.78.164.247/cms/images/%E8%B5%84%E8%AE%AF%E7%AE%A1%E7%90%86/u350.jpg">
+							</label>
+						</div>
+					</div>
+					<div class="form-group">
+						<label>正文</label>
+						<textarea name="infoContent" id="" cols="30" rows="6" class="form-control"></textarea>
+
+					</div>
+					<div class="form-group hide">
+						<button type="reset">重置</button>
+					</div>
+				</div>
+				</form>
+				<div class="modal-footer">
+				<span class="messageSpan"></span>
+				<button class="btn" style="background:#68B828">发布</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+</div>
+<style type="text/css">
+
+	button{
+		width: 100px;
+		height: 40px;
+		background-color: #68B828;
+		color: white;
+		margin-left: 10px;
+	}
+	table{
+		margin-top: 20px;
+		font-size: 20px;
+
+	}
+	#info .icon-edit-1-copy{
+		color:#63b919;
+		margin-right: 10px;
+	}
+	#info .icon-shanchu{
+		color:red;
+	}
+
+	.optionDiv{
+		overflow: hidden;
+	}
+	.optionDiv *{
+		float: left;
+	}
+	.optionDiv select{
+		width: 200px;
+		height: 30px;
+	}
+	
+	.modal{
+		background-color: rgba(0,0,0,0.5);
+
+	}
+	.modal-dialog{
+		margin-top: 0;
+		margin-right: 0;
+		width: 600px;
+	}
+	.modal-content{
+		overflow: scroll;
+	}
+	.messageSpan{
+		color: red;
+	}
+	.modal img{
+		width: 200px;
+		height: 80px;
+	}
+</style>
+<script type="text/javascript">
+$(function(){
+	//全局当前选中栏目的id,在name=categoryId获取,在name=infoCategory(模态框中的)设置
+	var publishtime = new Date();
+	var currentCId='';
+	var option='新增';
+	var articles = [];
+	var oId; 
+	var oId1;
+	$('.modal-content').height($(window).height())
+	addCategoryId();
+	//当select CategoryId发生改变时获取对应的文章信息
+	$('select[name=categoryId').change(function(){
+		var cId = $(this).val();
+		currentCId=cId;
+		loadData(cId);
+	});
+
+
+	//页面,option
+	function addCategoryId(){
+		$('.optionDiv select[name=categoryId]').empty();
+		$.get(baseURL+'/manager/category/findAllCategory',function(res){
+			console.log(res,"--------------------------------------")
+			res.data.forEach(function(item){
+				 var $option = $('<option value="'+item.id+'">'+item.name+'</option>');
+				 $('.optionDiv select[name=categoryId]').append($option);
+			});
+			currentCId = res.data[0].id;
+			loadData($('.optionDiv select[name=categoryId]').val());
+		})
+	}
+
+
+	//加载表格
+	function loadData(categoryId){
+		//清空表格除了第一行
+		option='新增'
+		$('#info tbody tr:not(:first)').remove();
+		var obj={
+			page:1,
+			pageSize:2,
+			categoryId:categoryId
+		}
+		$.get(baseURL+'/manager/article/findArticle',obj,function(res){
+			if(res.status==200){
+			
+			if(res.data){
+				articles =res.data.list;
+			}
+			articles.forEach(function(item){
+				//item 文章信息
+				$('<tr><td><input type="checkbox" value="'+item.id+'" /></td><td>'+item.title+'</td><td>'+item.category.name+'</td><td>'+item.liststyle
+					+'</td><td>'+item.author+'</td><td>'+item.publishtime+'</td><td>'+item.readtimes+'</td><td><i class="iconfont icon-edit-1-copy" title="修改"></i><i class="iconfont icon-shanchu" title="删除"></i></td></tr>').appendTo($('tbody'));
+			})
+			}else{
+				console.log(res);
+				alert('加载失败');
+			}	
+		})
+	}
+
+
+	$('button:contains(新增)').click(function(){
+		$('button[type=reset]').trigger('click');
+		$('.messageSpan').html('');
+		//option
+		addOption(currentCId);
+			
+	})
+	//查找栏目,追加option,模态框中
+	function addOption(CCId,handle){
+		$('select[name=infoCategory]').empty();
+		$.get(baseURL+'/manager/category/findAllCategory',function(res){
+			res.data.forEach(function(item){
+				var $option = $('<option value="'+item.id+'">'+item.name+'</option>');
+				 $('select[name=infoCategory]').append($option);
+				 
+			})
+            
+			//设置模态框中select的值为全局currentCId
+			$('select[name=infoCategory]').val(CCId);
+			if(handle){
+				handle();
+			}
+			$('#myModal').show();
+		})
+
+	}
+
+	//返回
+	$('.icon-zuo').click(function(){
+		$('#myModal').hide();
+	})
+
+	//保存
+	$('button:contains(发布)').on('click',function(){
+		var infoTitle = $('input[name=infoTitle]').val();
+		var infoCategory=$('select[name=infoCategory]').val();
+		var infoList = $('input[name=infoList]:checked').val();
+		var infoContent=$('textarea[name=infoContent]').val();
+		if(infoTitle&&infoList&&infoContent){
+			var obj={
+			title:infoTitle,
+			liststyle:infoList, 
+			categoryId:infoCategory,
+			content:infoContent
+			}
+			if(option=='修改'){
+				obj.id=oId1;
+				obj.publishtime=publishtime;
+				obj.readtimes = oId.readtimes;
+			}
+			$.post(baseURL+'/manager/article/saveOrUpdateArticle',obj,function(res){
+				
+					alert('保存成功');
+					$('#myModal').hide();
+					loadData(currentCId);
+				
+			})
+		}else{
+			$('.messageSpan').html('请输入完整信息')
+		}
+
+	
+	})
+	
+	
+		//删除
+		$('tbody').on({
+			click:function(){
+				var oId = $(this).closest('tr').find('input').val();
+				
+				$.get(baseURL+'/manager/article/deleteArticleById',{id:oId},function(res){
+					alert('删除成功');
+					loadData(currentCId);
+				})
+			}
+		},'.icon-shanchu')
+
+		//批量删除
+		$('button:contains(批量删除)').click(function(){
+			var $choice = $('input[type = checkbox]:checked');
+			var $vals = $choice.map(function(index,item){
+					return $(item).val();
+				})
+		 
+				// $vals.get().forEach(function(item,index){
+				// 	$.get(baseURL+'/manager/article/deleteArticleById',{id:item},function(res){
+				// 	console.log('删除成功');
+				// 	$('alertDiv').show(1000);
+				// 	setTimeout(function(){
+				// 		$('.alertDiv').fadeOut(3000);
+				// 	},2000);
+				// 	table();
+				// })
+				// })
+
+				var obj = {
+					ids:$vals.get().toString()
+				}
+				console.log(obj,'-------------')
+				$.post(baseURL+'/manager/article/batchDeleteArticle',obj,function(res){
+					console.log('批量删除成功');
+					loadData(currentCId);
+				})
+		})
+
+
+		//修改
+
+		$('tbody').on({
+			click:function(){
+				option='修改'
+				oId1 = $(this).closest('tr').find('input').val();
+				oId = articles.filter(function(item){
+					return item.id==oId1;
+				})[0];
+				// publishtime=oId.publishtime
+				$('input[name=infoTitle]').val(oId.title);
+
+				// $('input[type=radio]').each(function(index,item){
+				// 	if(item.value == (oId.liststyle)){
+				// 		$(item).prop('checked',true);
+				// 	}
+				// })
+
+				$('input[name=infoList]').prop('checked',false);
+				$('input[value="'+oId.liststyle+'"]').prop('checked',true);
+
+				$('textarea[name=infoContent]').val(oId.content);
+
+				addOption(currentCId,function(){
+				$('select[name=infoCategory]').val(oId.category.id);
+				console.log(oId.category)
+				});
+
+
+				$('#myModal').show();
+			}
+		},'.icon-edit-1-copy')
+		
+	})
+</script>

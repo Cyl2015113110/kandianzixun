@@ -1,0 +1,194 @@
+<div id="category">
+	<button class="btn">新增</button>
+	<button class="btn">批量删除</button>
+	<table class="table table-bordered table-hover text-center">
+		<tbody></tbody>
+	</table>
+	<div class="modal" id="myModal">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header text-center">
+					<i class="iconfont icon-zuo" style="float:left;cursor:pointer">返回</i>
+					<label>添加栏目</label>
+				</div>
+				<form>
+					<div class="modal-body">
+						<div class="form-group">
+							<label>栏目名称:</label>
+							<input type="text" name="lmName"  class="form-control">
+						</div>
+						<div class="form-group">
+							<label>父栏目:</label>
+							<select name="flmName" id="" class="form-control">
+								<option value="">请选择</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label>描述:</label>
+							<input type="textarea" name="msName"  style="height:100px" class="form-control">
+						</div>
+					</div>
+					<button type="reset" class="hide">重置</button>
+				</form>
+				<div class="modal-footer">
+					<button class="btn" style="background:#68B828">保存</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<style>
+	button{
+		width: 100px;
+		height: 40px;
+		background-color: #68B828;
+		color: white;
+	}
+	#category .icon-edit-1-copy{
+		color:#63b919;
+		margin-right: 10px;
+	}
+	#category i:last-child{
+		color: red;
+	}
+	#myModal{
+		background: rgba(0,0,0,0.5)
+	}
+	.modal-dialog{
+		margin-top:0;
+		margin-right: 0;
+		width: 400px;
+	}
+	
+</style>
+<script type="text/javascript">
+	var categories=[];
+	var oId;
+	var option='新增';
+	$(function(){
+		$('.modal-content').height($(window).height())
+		table();
+		//拿数据
+		function table(){
+			$('tbody').empty();
+			$('tbody').append($('<tr><td>编号</td><td>栏目名称</td><td>父栏目</td><td>描述</td><td>操作</td></tr>'));
+			$.get(baseURL+'/manager/category/findAllCategory',function(res){
+				categories= res.data;
+				categories.forEach(function(item){
+					$('tbody').append($('<tr><td><input type="checkbox" value="'+item.id+'" /></td><td>'+item.name+'</td><td>'+item.parent+'</td><td>'+item.comment+'</td><td><i class="iconfont icon-edit-1-copy"></i><i class="iconfont icon-shanchu"></i></td></tr>'));
+				})
+				
+			})
+		}
+
+		//删除
+		//要通过代理,要等表格加载出来
+		$('tbody').on({
+			click:function(){
+			var oId = $(this).closest('tr').find('input').val();
+			$.get(baseURL+'/manager/category/deleteCategoryById',{id:oId},function(res){
+				table();
+		})	
+	}},'.icon-shanchu')
+
+
+		//新增
+		$('button:contains(新增)').on('click',function(){
+
+			$('button[type=reset]').trigger('click');
+				$('#myModal').show();
+		})
+
+		//返回
+		$('.icon-zuo').click(function(){
+			$('#myModal').hide();
+		})
+		
+
+		//保存
+		$('button:contains(保存)').on('click',function(){
+			var lmName = $('input[name=lmName]').val();
+			var flmName = $('input[name=flmName]').val();
+			var msName = $('input[name=msName]').val();
+			var obj={
+				name:lmName,
+				parent:flmName,
+				comment:msName
+			}
+
+			if(option=='修改'){
+				obj.id=oId
+			}
+
+			$.post(baseURL+'/manager/category/saveOrUpdateCategory',obj,function(res){
+				alert('保存成功')
+				$('#myModal').hide();
+				table();
+			})
+		})
+
+
+		//批量删除
+		$('button:contains(批量删除)').on('click',function(){
+			var $choice = $('input[type = checkbox]:checked');
+				var $vals = $choice.map(function(index,item){
+					return $(item).val();
+				})
+				console.log($vals.get())//数组的join()方法
+				// $vals.get().forEach(function(item){
+				// 	$.get(baseURL+'/manager/category/deleteCategoryById',{id:item},function(res){
+				// 		console.log('批量删除成功');
+						
+				// 	})
+				// })
+
+				var obj = {
+					ids:$vals.get().toString()
+				}
+				console.log(obj,'-------------')
+				$.post(baseURL+'/manager/category/batchDeleteCategory',obj,function(res){
+					alert('成功')
+					table();
+				})
+
+		})
+
+
+
+		//修改
+		$('tbody').on({
+			click:function(){
+				option='修改';
+			oId = $(this).closest('tr').find('input').val();
+			var cat = categories.filter(function(item){
+				return item.id == oId;
+			})[0];
+			$('input[name=lmName]').val(cat.name);
+			$('input[name=msName]').val(cat.comment);
+
+			addOption(function(){
+				$('input[name=flmName]').val(cat.parent.id);
+				console.log(cat.parent)
+			})
+
+			$('#myModal').show();
+		}},'.icon-edit-1-copy');
+
+		addOption();
+		//option
+		function addOption(handle){
+			$.get(baseURL+'/manager/category/findAllCategory',function(res){
+				var parents = res.data;
+				parents.forEach(function(item){
+					$('select[name=flmName]').append('<option value="'+item.id+'">'+item.name+'</option>');
+				})
+				if(handle){
+					handle();
+				}
+				
+			})
+		}
+
+	})
+
+</script>
